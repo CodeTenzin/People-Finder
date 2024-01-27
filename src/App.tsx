@@ -1,16 +1,10 @@
-import axios from "axios";
+import axios, { CanceledError } from "axios";
 import { useEffect, useState } from "react";
 
 interface User {
   id: number;
   name: string;
   email: string;
-  address: {
-    street: string;
-    suite: string;
-    city: string;
-    zipcode: string;
-  };
   phone: string;
 }
 
@@ -40,15 +34,64 @@ const App = () => {
     return () => controller.abort();
   }, []);
 
+  const deleteUser = (user: User) => {
+    const originalUsers = [...users];
+    setUsers(users.filter((u) => u.id !== user.id));
+    axios
+      .delete("https://jsonplaceholder.typicode.com/users/" + user.id)
+      .catch((error) => {
+        if (error instanceof CanceledError) return;
+        setError(error.message);
+        setUsers(originalUsers);
+      });
+  };
+
   return (
     <>
+      <form className="container">
+        <div className="my-3">
+          <label htmlFor="name" className="form-label">
+            Name
+          </label>
+          <input id="name" type="text" className="form-control" />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="email" className="form-label">
+            Email
+          </label>
+          <input id="email" type="email" className="form-control" />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="number" className="form-label">
+            Phone
+          </label>
+          <input id="phone" type="phone" className="form-control" />
+        </div>
+        <button className="btn btn-outline-primary mb-5 px-5" type="submit">
+          Add
+        </button>
+      </form>
+
+      <div className="container mb-3">
+        <input type="text" className="form-control" placeholder="Search name" />
+      </div>
       {error && <p className="text-danger">{error}</p>}
       {isLoading && <div className="spinner-border"></div>}
-      <ul className="list-group">
+      <ul className="container list-group">
         {users.map((user) => (
-          <li className="list-group-item" key={user.id}>
-            {user.name} {user.email} {user.address.street} {user.address.suite}{" "}
-            {user.address.city} {user.address.zipcode} {user.phone}
+          <li
+            className="list-group-item d-flex justify-content-between"
+            key={user.id}
+          >
+            {user.name} <br />
+            {user.email} <br />
+            {user.phone} <br />
+            <button
+              className="btn btn-outline-danger m-2"
+              onClick={() => deleteUser(user)}
+            >
+              Delete
+            </button>
           </li>
         ))}
       </ul>
