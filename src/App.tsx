@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import { z } from "zod";
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-}
+// interface User {
+//   id: number;
+//   name: string;
+//   email: string;
+//   phone: string;
+// }
 
 const schema = z.object({
   id: z.number().default(-1),
@@ -31,14 +31,22 @@ const App = () => {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-  const onSubmit = (data: FieldValues) => {
+  // const onSubmit = (data: FieldValues) => {
+  //   reset();
+  //   console.log(data);
+  // };
+  const onSubmit = (data: FormData) => {
+    addUser(data);
     reset();
     console.log(data);
   };
 
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<FormData[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setLoading] = useState(false);
+
+  // Temp
+  let localId = users.length;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,7 +69,21 @@ const App = () => {
     return () => controller.abort();
   }, []);
 
-  const deleteUser = (user: User) => {
+  const addUser = (new_user: FormData) => {
+    // new_user.id = users.length + 1;
+    new_user.id = ++localId;
+    const originalUsers = [...users];
+    setUsers([new_user, ...users]);
+    axios
+      .post("https://jsonplaceholder.typicode.com/users", new_user)
+      .then(({ data: savedUser }) => setUsers([savedUser, ...users]))
+      .catch((err) => {
+        setError(err.message);
+        setUsers(originalUsers);
+      });
+  };
+
+  const deleteUser = (user: FormData) => {
     const originalUsers = [...users];
     setUsers(users.filter((u) => u.id !== user.id));
     axios
