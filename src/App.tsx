@@ -1,5 +1,8 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import axios, { CanceledError } from "axios";
 import { useEffect, useState } from "react";
+import { FieldValues, useForm } from "react-hook-form";
+import { z } from "zod";
 
 interface User {
   id: number;
@@ -8,7 +11,31 @@ interface User {
   phone: string;
 }
 
+const schema = z.object({
+  id: z.number().default(-1),
+  name: z
+    .string()
+    .min(1, { message: "Name must be atleast 1 character long." }),
+  email: z.string().email({ message: "Must be a valid email address." }),
+  phone: z.number({ invalid_type_error: "Phone field is required." }),
+  // .min(10, { message: "Must be a valid 10 digit number." }),
+});
+
+type FormData = z.infer<typeof schema>;
+
 const App = () => {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
+
+  const onSubmit = (data: FieldValues) => {
+    reset();
+    console.log(data);
+  };
+
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setLoading] = useState(false);
@@ -48,53 +75,80 @@ const App = () => {
 
   return (
     <>
-      <form className="container">
+      <form className="container" onSubmit={handleSubmit(onSubmit)}>
         <div className="my-3">
           <label htmlFor="name" className="form-label">
             Name
           </label>
-          <input id="name" type="text" className="form-control" />
+          <input
+            id="name"
+            type="text"
+            className="form-control"
+            {...register("name")}
+          />
+          {errors.name && <p className="text-danger">{errors.name.message}</p>}
         </div>
         <div className="mb-3">
           <label htmlFor="email" className="form-label">
             Email
           </label>
-          <input id="email" type="email" className="form-control" />
+          <input
+            id="email"
+            type="email"
+            className="form-control"
+            {...register("email")}
+          />
+          {errors.email && (
+            <p className="text-danger">{errors.email.message}</p>
+          )}
         </div>
         <div className="mb-3">
-          <label htmlFor="number" className="form-label">
+          <label htmlFor="phone" className="form-label">
             Phone
           </label>
-          <input id="phone" type="phone" className="form-control" />
+          <input
+            id="phone"
+            type="tel"
+            className="form-control"
+            {...register("phone", { valueAsNumber: true })}
+          />
+          {errors.phone && (
+            <p className="text-danger">{errors.phone.message}</p>
+          )}
         </div>
         <button className="btn btn-outline-primary mb-5 px-5" type="submit">
           Add
         </button>
-      </form>
+        {/* </form> */}
 
-      <div className="container mb-3">
-        <input type="text" className="form-control" placeholder="Search name" />
-      </div>
-      {error && <p className="text-danger">{error}</p>}
-      {isLoading && <div className="spinner-border"></div>}
-      <ul className="container list-group">
-        {users.map((user) => (
-          <li
-            className="list-group-item d-flex justify-content-between"
-            key={user.id}
-          >
-            {user.name} <br />
-            {user.email} <br />
-            {user.phone} <br />
-            <button
-              className="btn btn-outline-danger m-2"
-              onClick={() => deleteUser(user)}
+        <div className="container mb-3">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search name"
+          />
+        </div>
+        {error && <p className="text-danger">{error}</p>}
+        {isLoading && <div className="spinner-border"></div>}
+        <ul className="container list-group">
+          {users.map((user) => (
+            <li
+              className="list-group-item d-flex justify-content-between"
+              key={user.id}
             >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+              {user.name} <br />
+              {user.email} <br />
+              {user.phone} <br />
+              <button
+                className="btn btn-outline-danger m-2"
+                onClick={() => deleteUser(user)}
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+      </form>
     </>
   );
 };
