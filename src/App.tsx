@@ -95,6 +95,25 @@ const App = () => {
       });
   };
 
+  const updateUser = (user: FormData) => {
+    const originalUsers = [...users];
+    const updatedUser = {
+      ...user,
+      name: user.name.toUpperCase() + "- Updated!",
+    };
+
+    setUsers(users.map((u) => (u.id === user.id ? updatedUser : u)));
+    axios
+      .patch(
+        "https://jsonplaceholder.typicode.com/users/" + user.id,
+        updateUser
+      )
+      .catch((err) => {
+        setError(err.message);
+        setUsers(originalUsers);
+      });
+  };
+
   return (
     <>
       <form className="container" onSubmit={handleSubmit(onSubmit)}>
@@ -161,12 +180,21 @@ const App = () => {
               {user.name} <br />
               {user.email} <br />
               {user.phone} <br />
-              <button
-                className="btn btn-outline-danger m-2"
-                onClick={() => deleteUser(user)}
-              >
-                Delete
-              </button>
+              <div>
+                <button
+                  className="btn btn-outline-secondary m-2"
+                  onClick={() => updateUser(user)}
+                >
+                  Update
+                </button>
+
+                <button
+                  className="btn btn-outline-danger m-2"
+                  onClick={() => deleteUser(user)}
+                >
+                  Delete
+                </button>
+              </div>
             </li>
           ))}
         </ul>
